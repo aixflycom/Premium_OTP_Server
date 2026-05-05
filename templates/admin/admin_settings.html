@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SuperOTP — System Settings</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary:#6366f1; --primary-dark:#4f46e5;
+            --success:#10b981; --danger:#ef4444;
+            --bg:#f1f5f9; --surface:#fff;
+            --text:#0f172a; --muted:#64748b; --border:#e2e8f0;
+            --sidebar:260px; --topbar:68px; --radius:12px;
+            --shadow:0 1px 3px rgb(0 0 0/.1);
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:'Plus Jakarta Sans',sans-serif; background:var(--bg); color:var(--text); display:flex; height:100vh; overflow:hidden; }
+        .sidebar { width:var(--sidebar); background:var(--surface); border-right:1px solid var(--border); display:flex; flex-direction:column; flex-shrink:0; }
+        .sidebar-logo { height:var(--topbar); display:flex; align-items:center; gap:10px; padding:0 24px; border-bottom:1px solid var(--border); font-size:20px; font-weight:800; color:var(--primary); }
+        .sidebar-logo span { font-size:10px; background:var(--danger); color:#fff; padding:2px 7px; border-radius:4px; }
+        .nav { padding:20px 12px; flex:1; display:flex; flex-direction:column; gap:4px; }
+        .nav a { display:flex; align-items:center; gap:12px; padding:11px 14px; border-radius:10px; font-size:14px; font-weight:600; color:var(--muted); text-decoration:none; transition:.15s; }
+        .nav a:hover { background:#f1f5f9; color:var(--text); }
+        .nav a.active { background:#eff6ff; color:var(--primary); }
+        .nav a .icon { font-size:17px; width:22px; text-align:center; }
+        .sidebar-footer { padding:16px; border-top:1px solid var(--border); }
+        .sidebar-footer button { width:100%; padding:10px; border-radius:10px; border:1px solid var(--border); background:var(--surface); font-size:13px; font-weight:600; color:var(--muted); cursor:pointer; }
+        .sidebar-footer button:hover { background:#fef2f2; color:var(--danger); }
+        .main { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+        .topbar { height:var(--topbar); background:var(--surface); border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; padding:0 32px; flex-shrink:0; }
+        .topbar-title { font-size:18px; font-weight:700; }
+        .page-content { flex:1; overflow-y:auto; padding:28px 32px; display:flex; flex-direction:column; gap:20px; }
+        .settings-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(340px,1fr)); gap:20px; }
+        .card { background:var(--surface); border-radius:var(--radius); border:1px solid var(--border); box-shadow:var(--shadow); overflow:hidden; }
+        .card-head { padding:18px 24px; border-bottom:1px solid var(--border); }
+        .card-title { font-size:15px; font-weight:700; }
+        .card-desc { font-size:12px; color:var(--muted); margin-top:3px; }
+        .card-body { padding:24px; display:flex; flex-direction:column; gap:16px; }
+        .field label { display:block; font-size:12px; font-weight:700; color:var(--muted); margin-bottom:6px; text-transform:uppercase; letter-spacing:.4px; }
+        .field input, .field select { width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:8px; font-size:14px; font-family:inherit; outline:none; transition:.15s; }
+        .field input:focus, .field select:focus { border-color:var(--primary); box-shadow:0 0 0 3px rgb(99 102 241/.1); }
+        .field-hint { font-size:11px; color:var(--muted); margin-top:4px; }
+        .toggle-row { display:flex; align-items:center; justify-content:space-between; }
+        .toggle-row label { font-size:14px; font-weight:600; }
+        .toggle { position:relative; display:inline-block; width:44px; height:24px; }
+        .toggle input { opacity:0; width:0; height:0; }
+        .slider { position:absolute; inset:0; background:#cbd5e1; border-radius:24px; cursor:pointer; transition:.2s; }
+        .slider:before { content:''; position:absolute; height:18px; width:18px; left:3px; bottom:3px; background:#fff; border-radius:50%; transition:.2s; }
+        input:checked + .slider { background:var(--primary); }
+        input:checked + .slider:before { transform:translateX(20px); }
+        .btn { display:inline-flex; align-items:center; gap:6px; padding:10px 18px; border-radius:8px; font-size:13px; font-weight:700; cursor:pointer; border:none; transition:.15s; }
+        .btn-primary { background:var(--primary); color:#fff; }
+        .btn-primary:hover { background:var(--primary-dark); }
+        .btn-danger { background:#fee2e2; color:#dc2626; }
+        .btn-danger:hover { background:#fecaca; }
+        .btn-ghost { background:transparent; border:1px solid var(--border); color:var(--muted); }
+        .card-foot { padding:16px 24px; border-top:1px solid var(--border); display:flex; justify-content:flex-end; }
+        .notif-log { background:#f8fafc; border-radius:8px; padding:12px; max-height:140px; overflow-y:auto; font-size:12px; color:var(--muted); }
+        .toast { position:fixed; bottom:24px; right:24px; background:#0f172a; color:#fff; padding:12px 20px; border-radius:10px; font-size:13px; font-weight:600; display:none; z-index:999; }
+    </style>
+</head>
+<body>
+
+<aside class="sidebar">
+    <div class="sidebar-logo">SuperOTP <span>ADMIN</span></div>
+    <nav class="nav">
+        <a href="/admin"><span class="icon">👥</span> Users & Billing</a>
+        <a href="/admin/numbers"><span class="icon">📱</span> Admin Pool</a>
+        <a href="/admin/automation"><span class="icon">⚙️</span> Automation Logic</a>
+        <a href="/admin/settings" class="active"><span class="icon">🔧</span> System Settings</a>
+    </nav>
+    <div class="sidebar-footer">
+        <button onclick="logout()">🚪 Logout</button>
+    </div>
+</aside>
+
+<main class="main">
+    <div class="topbar">
+        <div class="topbar-title">🔧 System Settings</div>
+    </div>
+    <div class="page-content">
+        <div class="settings-grid">
+
+            <!-- Billing Settings -->
+            <div class="card">
+                <div class="card-head">
+                    <div class="card-title">💰 Billing Configuration</div>
+                    <div class="card-desc">Set the charge per successful OTP delivery</div>
+                </div>
+                <div class="card-body">
+                    <div class="field">
+                        <label>Price Per Successful OTP ($)</label>
+                        <input type="number" id="price-per-otp" step="0.01" min="0" placeholder="0.10">
+                        <div class="field-hint">Set to 0 for free. Deducted only when status = SENT.</div>
+                    </div>
+                </div>
+                <div class="card-foot">
+                    <button class="btn btn-primary" onclick="saveSetting('price_per_otp', 'price-per-otp')">Save Billing</button>
+                </div>
+            </div>
+
+            <!-- Registration Settings -->
+            <div class="card">
+                <div class="card-head">
+                    <div class="card-title">🔐 Registration Control</div>
+                    <div class="card-desc">Control who can create new accounts</div>
+                </div>
+                <div class="card-body">
+                    <div class="toggle-row">
+                        <div>
+                            <label>Public Signup</label>
+                            <div class="field-hint" style="margin-top:2px">Allow new users to self-register</div>
+                        </div>
+                        <label class="toggle">
+                            <input type="checkbox" id="public-signup" onchange="saveToggle('public_signup', this.checked)">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Broadcast Notification -->
+            <div class="card">
+                <div class="card-head">
+                    <div class="card-title">📢 Broadcast Notification</div>
+                    <div class="card-desc">Send a real-time message to all active bots</div>
+                </div>
+                <div class="card-body">
+                    <div class="field">
+                        <label>Message</label>
+                        <input type="text" id="notif-msg" placeholder="e.g. Server maintenance at 2AM">
+                    </div>
+                    <div class="field">
+                        <label>Type</label>
+                        <select id="notif-type">
+                            <option value="info">ℹ️ Info</option>
+                            <option value="warning">⚠️ Warning</option>
+                            <option value="success">✅ Success</option>
+                            <option value="error">❌ Error</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="card-foot">
+                    <button class="btn btn-primary" onclick="sendNotification()">📤 Broadcast</button>
+                </div>
+            </div>
+
+            <!-- Concurrent Limit -->
+            <div class="card">
+                <div class="card-head">
+                    <div class="card-title">🛡️ Security Limits</div>
+                    <div class="card-desc">Prevent system abuse and bypass attempts</div>
+                </div>
+                <div class="card-body">
+                    <div class="field">
+                        <label>Max Concurrent IN_USE Numbers</label>
+                        <input type="number" id="max-in-use" min="1" max="100" placeholder="10">
+                        <div class="field-hint">Users exceeding this limit will be blocked from getting new numbers.</div>
+                    </div>
+                </div>
+                <div class="card-foot">
+                    <button class="btn btn-primary" onclick="saveSetting('max_in_use', 'max-in-use')">Save Limit</button>
+                </div>
+            </div>
+
+            <!-- Script Versions Info -->
+            <div class="card">
+                <div class="card-head">
+                    <div class="card-title">📦 Script Version Status</div>
+                    <div class="card-desc">Current deployed automation script versions</div>
+                </div>
+                <div class="card-body">
+                    <div style="display:flex; flex-direction:column; gap:12px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 16px; background:#f8fafc; border-radius:8px; border:1px solid var(--border);">
+                            <span style="font-size:13px; font-weight:600;">🔴 Production Script</span>
+                            <span id="ver-prod" style="font-size:13px; font-weight:700; color:var(--primary);">v—</span>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 16px; background:#f8fafc; border-radius:8px; border:1px solid var(--border);">
+                            <span style="font-size:13px; font-weight:600;">🔵 Sandbox Script</span>
+                            <span id="ver-test" style="font-size:13px; font-weight:700; color:var(--primary);">v—</span>
+                        </div>
+                    </div>
+                    <div class="field-hint" style="margin-top:4px">Versions increment automatically on each deploy. Bots sync to latest version on startup.</div>
+                </div>
+                <div class="card-foot">
+                    <a href="/admin/automation" class="btn btn-ghost">✏️ Edit Scripts</a>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+    function toast(msg, ok=true) {
+        const t = document.getElementById('toast');
+        t.textContent = msg;
+        t.style.background = ok ? '#0f172a' : '#dc2626';
+        t.style.display = 'block';
+        setTimeout(() => t.style.display = 'none', 3000);
+    }
+
+    async function loadSettings() {
+        const res = await fetch('/web/api/admin/settings');
+        const data = await res.json();
+        if (!data.success) return;
+        const s = data.settings;
+
+        if (s['price_per_otp']) document.getElementById('price-per-otp').value = s['price_per_otp'];
+        if (s['max_in_use'])    document.getElementById('max-in-use').value    = s['max_in_use'] || 10;
+        if (s['public_signup']) document.getElementById('public-signup').checked = s['public_signup'] === 'true';
+        if (s['script_version'])      document.getElementById('ver-prod').textContent = 'v' + s['script_version'];
+        if (s['test_script_version']) document.getElementById('ver-test').textContent = 'v' + s['test_script_version'];
+    }
+
+    async function saveSetting(key, inputId) {
+        const val = document.getElementById(inputId).value;
+        const res = await fetch('/web/api/admin/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ [key]: val })
+        });
+        const data = await res.json();
+        if (data.success) toast('✅ Saved successfully!');
+        else toast('Save failed', false);
+    }
+
+    async function saveToggle(key, val) {
+        const res = await fetch('/web/api/admin/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ [key]: val ? 'true' : 'false' })
+        });
+        const data = await res.json();
+        toast(data.success ? '✅ Updated!' : 'Failed', data.success);
+    }
+
+    async function sendNotification() {
+        const msg  = document.getElementById('notif-msg').value.trim();
+        const type = document.getElementById('notif-type').value;
+        if (!msg) { toast('Message cannot be empty', false); return; }
+        const res = await fetch('/web/api/admin/notifications', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: msg, type })
+        });
+        const data = await res.json();
+        if (data.success) { toast('📢 Broadcast sent!'); document.getElementById('notif-msg').value = ''; }
+        else toast('Send failed', false);
+    }
+
+    async function logout() {
+        await fetch('/api/auth/logout', { method: 'POST' });
+        window.location.href = '/superotp';
+    }
+
+    loadSettings();
+</script>
+</body>
+</html>

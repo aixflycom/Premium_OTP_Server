@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SuperOTP - Admin Portal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #ef4444; /* Red theme for admin */
+            --primary-hover: #dc2626;
+            --glass-bg: rgba(15, 23, 42, 0.7); /* Dark glass */
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --text-light: #f8fafc;
+            --text-gray: #94a3b8;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #020617; /* Dark background */
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(239, 68, 68, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(59, 130, 246, 0.15) 0px, transparent 50%);
+            background-attachment: fixed;
+            font-family: 'Inter', sans-serif;
+            color: var(--text-light);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .auth-container {
+            width: 100%;
+            max-width: 400px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .auth-title {
+            font-size: 24px;
+            font-weight: 800;
+            margin-bottom: 8px;
+            color: var(--text-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .auth-title span {
+            font-size: 11px;
+            background: var(--primary);
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            position: relative;
+            top: -2px;
+        }
+
+        .auth-subtitle {
+            font-size: 14px;
+            color: var(--text-gray);
+            margin-bottom: 32px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .input-label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-gray);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .input-field {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 14px 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            color: var(--text-light);
+            transition: all 0.2s;
+            outline: none;
+        }
+
+        .input-field:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .auth-btn {
+            width: 100%;
+            padding: 14px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-family: 'Inter', sans-serif;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 10px;
+        }
+
+        .auth-btn:hover {
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+        }
+
+        .error-msg {
+            color: #fca5a5;
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 16px;
+            display: none;
+            background: rgba(239, 68, 68, 0.2);
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="auth-container">
+        <div id="error-box" class="error-msg"></div>
+
+        <div class="auth-title">SuperOTP <span>Admin</span></div>
+        <div class="auth-subtitle">Restricted Access Portal</div>
+
+        <div class="input-group">
+            <label class="input-label">Admin Username</label>
+            <input type="text" id="login-username" class="input-field" placeholder="Enter admin username">
+        </div>
+        
+        <div class="input-group">
+            <label class="input-label">Admin Password</label>
+            <input type="password" id="login-password" class="input-field" placeholder="Enter admin password">
+        </div>
+
+        <button class="auth-btn" onclick="handleAdminLogin()">Secure Login</button>
+    </div>
+
+    <script>
+        async function handleAdminLogin() {
+            const btn = document.querySelector('.auth-btn');
+            const errorBox = document.getElementById('error-box');
+            
+            btn.innerText = 'Authenticating...';
+            btn.disabled = true;
+            errorBox.style.display = 'none';
+
+            try {
+                const res = await fetch('/api/auth/admin-login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username: document.getElementById('login-username').value,
+                        password: document.getElementById('login-password').value
+                    })
+                });
+                
+                const data = await res.json();
+                
+                if (data.success) {
+                    btn.innerText = 'Success! Redirecting...';
+                    setTimeout(() => window.location.href = '/admin', 1000);
+                } else {
+                    errorBox.innerText = data.message || 'Login failed';
+                    errorBox.style.display = 'block';
+                    btn.innerText = 'Secure Login';
+                    btn.disabled = false;
+                }
+            } catch (err) {
+                errorBox.innerText = 'Network error. Try again.';
+                errorBox.style.display = 'block';
+                btn.innerText = 'Secure Login';
+                btn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>

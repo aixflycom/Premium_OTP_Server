@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: superotp
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn --worker-class eventlet -w 1 --bind 0.0.0.0:$PORT app:app
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: FLASK_SECRET_KEY
+        sync: false
+      - key: SUPEROTP_ADMIN_USER
+        sync: false
+      - key: SUPEROTP_ADMIN_PASS
+        sync: false
+      - key: SUPEROTP_ADMIN_API_KEY
+        sync: false
+      - key: RENDER_EXTERNAL_URL
+        sync: false
+      - key: PORT
+        value: "10000"

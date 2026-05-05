@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SuperOTP - Login</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --glass-bg: rgba(255, 255, 255, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.5);
+            --text-dark: #1e293b;
+            --text-gray: #64748b;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #fdfbfb;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(161, 140, 209, 0.3) 0px, transparent 50%),
+                radial-gradient(at 100% 0%, rgba(251, 194, 235, 0.3) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(143, 211, 244, 0.3) 0px, transparent 50%),
+                radial-gradient(at 0% 100%, rgba(132, 250, 176, 0.3) 0px, transparent 50%);
+            background-attachment: fixed;
+            font-family: 'Inter', sans-serif;
+            color: var(--text-dark);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .auth-container {
+            width: 100%;
+            max-width: 400px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.05);
+            padding: 40px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .auth-title {
+            font-size: 24px;
+            font-weight: 800;
+            margin-bottom: 8px;
+            color: var(--primary);
+        }
+
+        .auth-subtitle {
+            font-size: 14px;
+            color: var(--text-gray);
+            margin-bottom: 32px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .input-label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-gray);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .input-field {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 14px 16px;
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            color: var(--text-dark);
+            transition: all 0.2s;
+            outline: none;
+        }
+
+        .input-field:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .auth-btn {
+            width: 100%;
+            padding: 14px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-family: 'Inter', sans-serif;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 10px;
+        }
+
+        .auth-btn:hover {
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+        }
+
+        .auth-switch {
+            margin-top: 24px;
+            font-size: 14px;
+            color: var(--text-gray);
+        }
+
+        .auth-switch a {
+            color: var(--primary);
+            font-weight: 600;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .auth-switch a:hover {
+            text-decoration: underline;
+        }
+
+        .error-msg {
+            color: #ef4444;
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 16px;
+            display: none;
+            background: rgba(239, 68, 68, 0.1);
+            padding: 10px;
+            border-radius: 8px;
+        }
+        
+        .success-msg {
+            color: #10b981;
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 16px;
+            display: none;
+            background: rgba(16, 185, 129, 0.1);
+            padding: 10px;
+            border-radius: 8px;
+        }
+
+        /* Hide elements by default */
+        #register-form { display: none; }
+    </style>
+</head>
+<body>
+
+    <div class="auth-container">
+        
+        <div id="error-box" class="error-msg"></div>
+        <div id="success-box" class="success-msg"></div>
+
+        <!-- LOGIN FORM -->
+        <div id="login-form">
+            <div class="auth-title">Welcome Back</div>
+            <div class="auth-subtitle">Login to your SuperOTP dashboard</div>
+
+            <div class="input-group">
+                <label class="input-label">Username</label>
+                <input type="text" id="login-username" class="input-field" placeholder="Enter your username">
+            </div>
+            
+            <div class="input-group">
+                <label class="input-label">Password</label>
+                <input type="password" id="login-password" class="input-field" placeholder="Enter your password">
+            </div>
+
+            <button class="auth-btn" onclick="handleLogin()">Sign In</button>
+
+            <div class="auth-switch">
+                Don't have an account? <a onclick="toggleForms()">Register</a>
+            </div>
+        </div>
+
+        <!-- REGISTER FORM -->
+        <div id="register-form">
+            <div class="auth-title">Create Account</div>
+            <div class="auth-subtitle">Join SuperOTP platform</div>
+
+            <div class="input-group">
+                <label class="input-label">Full Name</label>
+                <input type="text" id="reg-fullname" class="input-field" placeholder="John Doe">
+            </div>
+
+            <div class="input-group">
+                <label class="input-label">Username</label>
+                <input type="text" id="reg-username" class="input-field" placeholder="Choose a username">
+            </div>
+            
+            <div class="input-group">
+                <label class="input-label">Password</label>
+                <input type="password" id="reg-password" class="input-field" placeholder="Create a strong password">
+            </div>
+
+            <button class="auth-btn" onclick="handleRegister()">Create Account</button>
+
+            <div class="auth-switch">
+                Already have an account? <a onclick="toggleForms()">Sign In</a>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        function toggleForms() {
+            const loginForm = document.getElementById('login-form');
+            const regForm = document.getElementById('register-form');
+            hideMessages();
+
+            if (loginForm.style.display === 'none') {
+                loginForm.style.display = 'block';
+                regForm.style.display = 'none';
+            } else {
+                loginForm.style.display = 'none';
+                regForm.style.display = 'block';
+            }
+        }
+
+        function showMessage(type, msg) {
+            const errorBox = document.getElementById('error-box');
+            const successBox = document.getElementById('success-box');
+            hideMessages();
+            
+            if (type === 'error') {
+                errorBox.innerText = msg;
+                errorBox.style.display = 'block';
+            } else {
+                successBox.innerText = msg;
+                successBox.style.display = 'block';
+            }
+        }
+
+        function hideMessages() {
+            document.getElementById('error-box').style.display = 'none';
+            document.getElementById('success-box').style.display = 'none';
+        }
+
+        async function handleLogin() {
+            const btn = document.querySelector('#login-form .auth-btn');
+            btn.innerText = 'Logging in...';
+            btn.disabled = true;
+
+            try {
+                const res = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username: document.getElementById('login-username').value,
+                        password: document.getElementById('login-password').value
+                    })
+                });
+                
+                const data = await res.json();
+                
+                if (data.success) {
+                    showMessage('success', 'Login successful! Redirecting...');
+                    setTimeout(() => window.location.href = '/', 1000);
+                } else {
+                    showMessage('error', data.message || 'Login failed');
+                    btn.innerText = 'Sign In';
+                    btn.disabled = false;
+                }
+            } catch (err) {
+                showMessage('error', 'Network error. Try again.');
+                btn.innerText = 'Sign In';
+                btn.disabled = false;
+            }
+        }
+
+        async function handleRegister() {
+            const btn = document.querySelector('#register-form .auth-btn');
+            btn.innerText = 'Creating account...';
+            btn.disabled = true;
+
+            try {
+                const res = await fetch('/api/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        full_name: document.getElementById('reg-fullname').value,
+                        username: document.getElementById('reg-username').value,
+                        password: document.getElementById('reg-password').value
+                    })
+                });
+                
+                const data = await res.json();
+                
+                if (data.success) {
+                    showMessage('success', 'Account created! Redirecting...');
+                    setTimeout(() => window.location.href = '/', 1000);
+                } else {
+                    showMessage('error', data.message || 'Registration failed');
+                    btn.innerText = 'Create Account';
+                    btn.disabled = false;
+                }
+            } catch (err) {
+                showMessage('error', 'Network error. Try again.');
+                btn.innerText = 'Create Account';
+                btn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,5 @@
+- DATABASE_URL : আপনার Supabase ডাটাবেস লিঙ্ক। postgresql://postgres:Nabid@1122@db.exbpdpnryijpnjdoumqv.supabase.co:5432/postgres
+- FLASK_SECRET_KEY : একটি র্যান্ডম সিক্রেট স্ট্রিং (যেমন: my_secret_key_123 )।
+- OTP_NEXUS_ADMIN_USER : অ্যাডমিন ইউজারনেম (ডিফল্ট: admin )।
+- OTP_NEXUS_ADMIN_PASS : অ্যাডমিন পাসওয়ার্ড (ডিফল্ট: admin123 )।
+- NEXUS_ADMIN_API_KEY : অ্যাডমিন এপিআই কি।

@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SuperOTP — My Numbers</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1; --primary-dark: #4f46e5;
+            --success: #10b981; --danger: #ef4444;
+            --bg: #f8fafc; --surface: #ffffff;
+            --text: #0f172a; --muted: #64748b; --border: #e2e8f0;
+            --sidebar: 260px; --topbar: 68px; --radius: 12px;
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:'Plus Jakarta Sans',sans-serif; background:var(--bg); color:var(--text); display:flex; height:100vh; overflow:hidden; }
+
+        .sidebar { width:var(--sidebar); background:var(--surface); border-right:1px solid var(--border); display:flex; flex-direction:column; flex-shrink:0; }
+        .sidebar-logo { height:var(--topbar); display:flex; align-items:center; gap:10px; padding:0 24px; border-bottom:1px solid var(--border); font-size:20px; font-weight:800; color:var(--primary); }
+        .sidebar-logo span { font-size:10px; background:var(--primary); color:#fff; padding:2px 7px; border-radius:4px; }
+        .nav { padding:20px 12px; flex:1; display:flex; flex-direction:column; gap:4px; }
+        .nav a { display:flex; align-items:center; gap:12px; padding:11px 14px; border-radius:10px; font-size:14px; font-weight:600; color:var(--muted); text-decoration:none; transition:.15s; }
+        .nav a:hover { background:#f1f5f9; color:var(--text); }
+        .nav a.active { background:#eff6ff; color:var(--primary); }
+        .nav a .icon { font-size:17px; width:22px; text-align:center; }
+        .sidebar-footer { padding:16px; border-top:1px solid var(--border); }
+        .sidebar-footer button { width:100%; padding:10px; border-radius:10px; border:1px solid var(--border); background:var(--surface); font-size:13px; font-weight:600; color:var(--muted); cursor:pointer; }
+
+        .main { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+        .topbar { height:var(--topbar); background:var(--surface); border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; padding:0 32px; flex-shrink:0; }
+        .topbar-title { font-size:18px; font-weight:700; }
+        .page-content { flex:1; overflow-y:auto; padding:32px; display:flex; flex-direction:column; gap:24px; }
+
+        .card { background:var(--surface); border-radius:var(--radius); border:1px solid var(--border); box-shadow:var(--shadow); overflow:hidden; }
+        .card-head { padding:18px 24px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
+        .card-title { font-size:15px; font-weight:700; }
+        .card-body { padding:24px; }
+
+        textarea { width:100%; height:140px; padding:16px; border:1px solid var(--border); border-radius:10px; font-family:inherit; font-size:14px; outline:none; resize:none; margin-bottom:12px; }
+        textarea:focus { border-color:var(--primary); box-shadow:0 0 0 3px rgb(99 102 241/.1); }
+
+        table { width:100%; border-collapse:collapse; }
+        th { padding:14px 20px; font-size:11px; font-weight:700; color:var(--muted); text-align:left; background:#f8fafc; border-bottom:1px solid var(--border); text-transform:uppercase; }
+        td { padding:14px 20px; font-size:13.5px; border-bottom:1px solid var(--border); }
+        
+        .badge { padding:4px 10px; border-radius:6px; font-size:11px; font-weight:700; }
+        .badge-green { background:#dcfce7; color:#16a34a; }
+        .badge-blue { background:#dbeafe; color:#2563eb; }
+
+        .btn { padding:10px 18px; border-radius:8px; font-size:13px; font-weight:700; cursor:pointer; border:1px solid var(--border); background:#fff; transition:.15s; }
+        .btn-primary { background:var(--primary); color:#fff; border:none; }
+        .btn-danger { background:#fee2e2; color:#dc2626; border:none; }
+    </style>
+</head>
+<body>
+
+<aside class="sidebar">
+    <div class="sidebar-logo">SuperOTP <span>USER</span></div>
+    <nav class="nav">
+        <a href="/dashboard"><span class="icon">📊</span> Overview</a>
+        <a href="/dashboard/numbers" class="active"><span class="icon">📱</span> My Numbers</a>
+        <a href="/dashboard/logs"><span class="icon">📋</span> Activity Logs</a>
+    </nav>
+    <div class="sidebar-footer">
+        <button onclick="logout()">🚪 Logout</button>
+    </div>
+</aside>
+
+<main class="main">
+    <div class="topbar">
+        <div class="topbar-title">📱 Number Pool Management</div>
+    </div>
+    <div class="page-content">
+
+        <div id="restricted-notice" style="display:none; padding:20px; background:#fff7ed; border:1px solid #fed7aa; border-radius:12px; color:#9a3412; margin-bottom:24px;">
+            <div style="font-weight:800; font-size:15px; margin-bottom:4px">🔒 Restricted Mode Active</div>
+            <p style="font-size:13px; opacity:0.9">You are currently using the Admin's shared number pool. You cannot upload your own numbers until the restriction is lifted.</p>
+        </div>
+
+        <div class="card" id="upload-card">
+            <div class="card-head"><div class="card-title">➕ Add New Numbers</div></div>
+            <div class="card-body">
+                <textarea id="num-input" placeholder="Enter phone numbers (one per line)"></textarea>
+                <div style="display:flex; justify-content:space-between; align-items:center">
+                    <span style="font-size:12px; color:var(--muted)">Format: 017xxxxxxxx</span>
+                    <button class="btn btn-primary" onclick="addNumbers()">Upload List</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card" style="margin-top:24px">
+            <div class="card-head">
+                <div class="card-title">📋 Current Pool Status</div>
+                <button class="btn btn-danger btn-sm" onclick="clearNumbers()">Purge Pool</button>
+            </div>
+            <div style="overflow-x:auto">
+                <table>
+                    <thead>
+                        <tr><th>Phone Number</th><th>Current Status</th><th>Added On</th></tr>
+                    </thead>
+                    <tbody id="num-tbody">
+                        <tr><td colspan="3" style="text-align:center; padding:40px; color:var(--muted)">Loading your numbers...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+</main>
+
+<script>
+    async function loadNumbers() {
+        const authRes = await fetch('/api/auth/me');
+        const user = await authRes.json();
+        
+        if (user.use_admin_numbers) {
+            document.getElementById('restricted-notice').style.display = 'block';
+            document.getElementById('upload-card').style.opacity = '0.5';
+            document.getElementById('upload-card').style.pointerEvents = 'none';
+        }
+
+        const res = await fetch('/web/api/numbers');
+        const data = await res.json();
+        const tbody = document.getElementById('num-tbody');
+        
+        if (!data.numbers || data.numbers.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:40px; color:var(--muted)">No numbers found in your pool</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = data.numbers.map(n => `
+            <tr>
+                <td><b>${n.phone_number}</b></td>
+                <td><span class="badge ${n.status==='READY'?'badge-green':'badge-blue'}">${n.status}</span></td>
+                <td style="color:var(--muted); font-size:12px">${new Date(n.created_at).toLocaleString()}</td>
+            </tr>
+        `).join('');
+    }
+
+    async function addNumbers() {
+        const text = document.getElementById('num-input').value.trim();
+        if (!text) return;
+        const nums = text.split('\n').map(n => n.trim()).filter(n => n.length > 0);
+        
+        await fetch('/web/api/numbers', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ numbers: nums })
+        });
+        document.getElementById('num-input').value = '';
+        loadNumbers();
+    }
+
+    async function clearNumbers() {
+        if (!confirm('Are you sure you want to clear your entire number pool?')) return;
+        await fetch('/web/api/numbers', { method: 'DELETE' });
+        loadNumbers();
+    }
+
+    async function logout() {
+        await fetch('/api/auth/logout', { method: 'POST' });
+        window.location.href = '/login';
+    }
+
+    loadNumbers();
+</script>
+</body>
+</html>

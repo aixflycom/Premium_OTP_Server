@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SuperOTP — Activity Logs</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1; --primary-dark: #4f46e5;
+            --success: #10b981; --danger: #ef4444;
+            --bg: #f8fafc; --surface: #ffffff;
+            --text: #0f172a; --muted: #64748b; --border: #e2e8f0;
+            --sidebar: 260px; --topbar: 68px; --radius: 12px;
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:'Plus Jakarta Sans',sans-serif; background:var(--bg); color:var(--text); display:flex; height:100vh; overflow:hidden; }
+
+        .sidebar { width:var(--sidebar); background:var(--surface); border-right:1px solid var(--border); display:flex; flex-direction:column; flex-shrink:0; }
+        .sidebar-logo { height:var(--topbar); display:flex; align-items:center; gap:10px; padding:0 24px; border-bottom:1px solid var(--border); font-size:20px; font-weight:800; color:var(--primary); }
+        .sidebar-logo span { font-size:10px; background:var(--primary); color:#fff; padding:2px 7px; border-radius:4px; }
+        .nav { padding:20px 12px; flex:1; display:flex; flex-direction:column; gap:4px; }
+        .nav a { display:flex; align-items:center; gap:12px; padding:11px 14px; border-radius:10px; font-size:14px; font-weight:600; color:var(--muted); text-decoration:none; transition:.15s; }
+        .nav a:hover { background:#f1f5f9; color:var(--text); }
+        .nav a.active { background:#eff6ff; color:var(--primary); }
+        .nav a .icon { font-size:17px; width:22px; text-align:center; }
+        .sidebar-footer { padding:16px; border-top:1px solid var(--border); }
+        .sidebar-footer button { width:100%; padding:10px; border-radius:10px; border:1px solid var(--border); background:var(--surface); font-size:13px; font-weight:600; color:var(--muted); cursor:pointer; }
+
+        .main { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+        .topbar { height:var(--topbar); background:var(--surface); border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; padding:0 32px; flex-shrink:0; }
+        .topbar-title { font-size:18px; font-weight:700; }
+        .page-content { flex:1; overflow-y:auto; padding:32px; display:flex; flex-direction:column; gap:24px; }
+
+        .card { background:var(--surface); border-radius:var(--radius); border:1px solid var(--border); box-shadow:var(--shadow); overflow:hidden; }
+        .card-head { padding:18px 24px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
+        .card-title { font-size:15px; font-weight:700; }
+        
+        .log-terminal { background:#0f172a; border-radius:12px; padding:24px; min-height:500px; max-height:calc(100vh - 250px); overflow-y:auto; font-family:'JetBrains Mono', monospace; font-size:13px; line-height:1.6; }
+        .log-line { margin-bottom:10px; border-left:2px solid #334155; padding-left:14px; }
+        .log-ts { color:#475569; margin-right:12px; }
+        .log-lvl-SUCCESS { color:#10b981; font-weight:700; }
+        .log-lvl-ERROR { color:#ef4444; font-weight:700; }
+        .log-lvl-INFO { color:#6366f1; }
+        .log-phone { color:#94a3b8; font-weight:600; margin-right:8px; }
+
+        .btn { padding:8px 16px; border-radius:8px; font-size:13px; font-weight:700; cursor:pointer; border:1px solid var(--border); background:#fff; transition:.15s; }
+        .btn:hover { background:#f1f5f9; }
+    </style>
+</head>
+<body>
+
+<aside class="sidebar">
+    <div class="sidebar-logo">SuperOTP <span>USER</span></div>
+    <nav class="nav">
+        <a href="/dashboard"><span class="icon">📊</span> Overview</a>
+        <a href="/dashboard/numbers"><span class="icon">📱</span> My Numbers</a>
+        <a href="/dashboard/logs" class="active"><span class="icon">📋</span> Activity Logs</a>
+    </nav>
+    <div class="sidebar-footer">
+        <button onclick="logout()">🚪 Logout</button>
+    </div>
+</aside>
+
+<main class="main">
+    <div class="topbar">
+        <div class="topbar-title">📋 Real-time Activity Logs</div>
+        <button class="btn" onclick="loadLogs()">🔄 Refresh Feed</button>
+    </div>
+    <div class="page-content">
+        <div class="card">
+            <div class="card-body" style="padding:20px">
+                <div class="log-terminal" id="log-v">
+                    <div style="color:#475569">Connecting to live feed...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<script>
+    let socket = null;
+
+    async function loadLogs() {
+        const meRes = await fetch('/api/auth/me');
+        const meData = await meRes.json();
+        if (!meData.id) return;
+        
+        if (!socket) initSocket(meData.api_key);
+
+        const res = await fetch('/web/api/logs');
+        const data = await res.json();
+        const box = document.getElementById('log-v');
+        
+        if (!data.logs || data.logs.length === 0) {
+            box.innerHTML = '<div style="color:#475569">No recent activity detected from your bots.</div>';
+            return;
+        }
+
+        box.innerHTML = '';
+        data.logs.forEach(log => appendLog(log));
+    }
+
+    function initSocket(apiKey) {
+        socket = io({ transportOptions: { polling: { extraHeaders: { 'X-API-Key': apiKey } } } });
+        socket.on('new_bot_log', (log) => appendLog(log));
+    }
+
+    function appendLog(log) {
+        const box = document.getElementById('log-v');
+        if (box.innerText.includes('Connecting') || box.innerText.includes('No recent activity')) box.innerHTML = '';
+        
+        const line = document.createElement('div');
+        line.className = 'log-line';
+        const ts = log.created_at.includes(' ') ? log.created_at.split(' ')[1] : new Date(log.created_at).toLocaleTimeString();
+        const lvlCls = `log-lvl-${log.level}`;
+        
+        line.innerHTML = `
+            <span class="log-ts">[${ts}]</span>
+            <span class="${lvlCls}">[${log.level}]</span>
+            <span class="log-phone">${log.phone_number || 'SYSTEM'}</span>
+            <span style="color:#e2e8f0">${log.message}</span>
+            <span style="color:#475569; font-size:10px; float:right">${log.device_id || ''}</span>
+        `;
+        box.appendChild(line);
+        box.scrollTop = box.scrollHeight;
+    }
+
+    async function logout() {
+        await fetch('/api/auth/logout', { method: 'POST' });
+        window.location.href = '/login';
+    }
+
+    loadLogs();
+</script>
+</body>
+</html>

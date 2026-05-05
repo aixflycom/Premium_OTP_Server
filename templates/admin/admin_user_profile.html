@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SuperOTP — User Profile Audit</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary:#6366f1; --primary-dark:#4f46e5;
+            --success:#10b981; --danger:#ef4444; --warning:#f59e0b;
+            --bg:#f8fafc; --surface:#ffffff;
+            --text:#0f172a; --muted:#64748b; --border:#e2e8f0;
+            --sidebar:260px; --topbar:68px; --radius:16px;
+            --shadow:0 10px 15px -3px rgb(0 0 0 / 0.1);
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:'Plus Jakarta Sans',sans-serif; background:var(--bg); color:var(--text); display:flex; height:100vh; overflow:hidden; }
+        
+        .sidebar { width:var(--sidebar); background:var(--surface); border-right:1px solid var(--border); display:flex; flex-direction:column; flex-shrink:0; }
+        .sidebar-logo { height:var(--topbar); display:flex; align-items:center; gap:10px; padding:0 24px; border-bottom:1px solid var(--border); font-size:20px; font-weight:800; color:var(--primary); }
+        .sidebar-logo span { font-size:10px; background:var(--danger); color:#fff; padding:2px 7px; border-radius:4px; }
+        .nav { padding:20px 12px; flex:1; display:flex; flex-direction:column; gap:4px; }
+        .nav a { display:flex; align-items:center; gap:12px; padding:11px 14px; border-radius:10px; font-size:14px; font-weight:600; color:var(--muted); text-decoration:none; transition:.15s; }
+        .nav a:hover { background:#f1f5f9; color:var(--text); }
+        .nav a.active { background:#eff6ff; color:var(--primary); }
+        .nav a .icon { font-size:17px; width:22px; text-align:center; }
+
+        .main { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+        .topbar { height:var(--topbar); background:var(--surface); border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; padding:0 32px; flex-shrink:0; }
+        .topbar-title { font-size:18px; font-weight:700; display:flex; align-items:center; gap:10px; }
+        
+        .page-content { flex:1; overflow-y:auto; padding:32px; display:flex; flex-direction:column; gap:28px; }
+
+        /* Profile Header Card */
+        .profile-header { 
+            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); 
+            padding: 40px; 
+            border-radius: var(--radius); 
+            color: #fff; 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+            box-shadow: var(--shadow); 
+            position: relative; 
+            overflow: hidden; 
+            min-height: 180px;
+        }
+        .profile-header::after { content:''; position:absolute; right:-50px; top:-50px; width:250px; height:250px; background:rgba(255,255,255,0.1); border-radius:50%; }
+        .profile-info { display:flex; align-items:center; gap:28px; z-index: 1; }
+        .avatar { width:90px; height:90px; background:rgba(255,255,255,0.2); border-radius:28px; display:flex; align-items:center; justify-content:center; font-size:40px; border:2px solid rgba(255,255,255,0.3); flex-shrink: 0; }
+        .profile-text { display: flex; flex-direction: column; justify-content: center; }
+        .profile-text h1 { font-size:28px; font-weight:800; margin-bottom:6px; line-height: 1.2; }
+        .profile-text p { font-size:15px; opacity:0.85; font-weight:500; }
+        .profile-badges { display:flex; gap:8px; margin-top:8px; }
+        .p-badge { padding:4px 10px; border-radius:6px; font-size:11px; font-weight:700; background:rgba(255,255,255,0.2); text-transform:uppercase; border:1px solid rgba(255,255,255,0.2); }
+
+        .stats-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:20px; }
+        .stat-card { background:var(--surface); border-radius:var(--radius); border:1px solid var(--border); padding:24px; box-shadow:0 4px 6px -1px rgb(0 0 0 / 0.05); transition:.2s; }
+        .stat-card:hover { transform:translateY(-2px); box-shadow:var(--shadow); }
+        .stat-icon { width:40px; height:40px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:20px; margin-bottom:16px; }
+        .stat-label { font-size:12px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; }
+        .stat-value { font-size:28px; font-weight:800; margin-top:4px; }
+
+        .card { background:var(--surface); border-radius:var(--radius); border:1px solid var(--border); box-shadow:0 4px 6px -1px rgb(0 0 0 / 0.05); }
+        .card-head { padding:20px 24px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; }
+        .card-title { font-size:15px; font-weight:700; display:flex; align-items:center; gap:10px; }
+        
+        .log-terminal { background:#0f172a; border-radius:12px; padding:20px; height:450px; overflow-y:auto; font-family:'JetBrains Mono', monospace; font-size:13px; line-height:1.6; }
+        .log-line { margin-bottom:8px; border-left:2px solid #334155; padding-left:12px; }
+        .log-ts { color:#475569; margin-right:10px; }
+        .log-lvl-SUCCESS { color:#10b981; font-weight:700; }
+        .log-lvl-ERROR { color:#ef4444; font-weight:700; }
+        .log-lvl-INFO { color:#6366f1; }
+
+        table { width:100%; border-collapse:collapse; }
+        th { padding:14px 24px; font-size:11px; font-weight:700; color:var(--muted); text-align:left; background:#f8fafc; border-bottom:1px solid var(--border); text-transform:uppercase; }
+        td { padding:16px 24px; font-size:14px; border-bottom:1px solid var(--border); }
+        
+        .status-pill { padding:4px 10px; border-radius:20px; font-size:11px; font-weight:700; }
+        .pill-success { background:#dcfce7; color:#16a34a; }
+        
+        .btn { display:inline-flex; align-items:center; gap:8px; padding:10px 20px; border-radius:10px; font-size:13px; font-weight:700; cursor:pointer; border:1px solid var(--border); transition:.15s; background:var(--surface); }
+        .btn:hover { background:#f1f5f9; }
+    </style>
+</head>
+<body>
+
+<aside class="sidebar">
+    <div class="sidebar-logo">SuperOTP <span>ADMIN</span></div>
+    <nav class="nav">
+        <a href="/admin" class="active"><span class="icon">👥</span> Users & Billing</a>
+        <a href="/admin/numbers"><span class="icon">📱</span> Admin Pool</a>
+        <a href="/admin/automation"><span class="icon">⚙️</span> Automation Logic</a>
+        <a href="/admin/settings"><span class="icon">🔧</span> System Settings</a>
+    </nav>
+</aside>
+
+<main class="main">
+    <div class="topbar">
+        <div class="topbar-title">👤 User Profile Detail</div>
+        <button class="btn" onclick="window.location.href='/admin'">Back to Users</button>
+    </div>
+    <div class="page-content">
+        
+        <!-- Premium Header -->
+        <div class="profile-header">
+            <div class="profile-info">
+                <div class="avatar">👤</div>
+                <div class="profile-text">
+                    <h1 id="p-username">Loading...</h1>
+                    <p id="p-fullname">User Full Name</p>
+                    <div class="profile-badges">
+                        <span class="p-badge" id="p-role">USER</span>
+                        <span class="p-badge" id="p-status">ACTIVE</span>
+                    </div>
+                </div>
+            </div>
+            <div style="text-align:right">
+                <div style="font-size:12px; opacity:0.7; margin-bottom:4px">User ID</div>
+                <div style="font-size:20px; font-weight:800">#<span id="p-uid">0</span></div>
+            </div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon" style="background:#ecfdf5; color:#10b981">📈</div>
+                <div class="stat-label">Successful OTP</div>
+                <div class="stat-value" id="s-sent">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background:#fef2f2; color:#ef4444">📉</div>
+                <div class="stat-label">Failed/Expired</div>
+                <div class="stat-value" id="s-failed">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background:#eff6ff; color:#3b82f6">💰</div>
+                <div class="stat-label">Current Balance</div>
+                <div class="stat-value" id="s-balance">$0.00</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background:#fff7ed; color:#f59e0b">📱</div>
+                <div class="stat-label">Active Bots</div>
+                <div class="stat-value" id="s-devices">0</div>
+            </div>
+        </div>
+
+        <!-- Quick Controls -->
+        <div class="card" style="border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
+            <div class="card-head" style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+                <div class="card-title" style="color: #1e293b;">🛠️ Administrative Controls</div>
+            </div>
+            <div class="card-body" style="padding: 24px;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px;">
+                    
+                    <!-- API Section -->
+                    <div style="background: #f1f5f9; padding: 20px; border-radius: 16px;">
+                        <label style="font-size:11px; font-weight:800; color:#64748b; display:block; margin-bottom:12px; text-transform:uppercase; letter-spacing:1px;">API Management</label>
+                        <div style="display:flex; gap:10px; align-items:center;">
+                            <div style="background:#ffffff; border:1px solid #cbd5e1; padding:10px 14px; border-radius:12px; font-family:'JetBrains Mono', monospace; font-size:11px; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; box-shadow: inset 0 2px 4px 0 rgba(0,0,0,0.05);" id="p-apikey">••••••••</div>
+                            <button class="btn" onclick="resetKey()" style="background:#6366f1; color:white; border:none; padding:10px 18px; border-radius:10px; font-weight:600; font-size:12px; cursor:pointer; transition:all 0.2s;">Reset</button>
+                        </div>
+                    </div>
+
+                    <!-- Restrictions Section -->
+                    <div style="background: #f1f5f9; padding: 20px; border-radius: 16px;">
+                        <label style="font-size:11px; font-weight:800; color:#64748b; display:block; margin-bottom:12px; text-transform:uppercase; letter-spacing:1px;">Restrictions & Status</label>
+                        <div style="display:flex; gap:12px;">
+                            <button id="btn-restrict" onclick="toggleRestriction()" style="flex:1; padding:10px; border-radius:10px; border:1px solid #cbd5e1; background:white; font-weight:600; font-size:12px; cursor:pointer; transition:all 0.2s;">Loading...</button>
+                            <button id="btn-status" onclick="toggleActive()" style="flex:1; padding:10px; border-radius:10px; border:1px solid #cbd5e1; background:white; font-weight:600; font-size:12px; cursor:pointer; transition:all 0.2s;">Loading...</button>
+                        </div>
+                    </div>
+
+                    <!-- Balance Section -->
+                    <div style="background: #f1f5f9; padding: 20px; border-radius: 16px;">
+                        <label style="font-size:11px; font-weight:800; color:#64748b; display:block; margin-bottom:12px; text-transform:uppercase; letter-spacing:1px;">Balance Management</label>
+                        <div style="display:flex; gap:10px;">
+                            <div style="position:relative; flex:0 0 120px;">
+                                <span style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:#94a3b8; font-weight:700;">$</span>
+                                <input type="number" id="in-balance" placeholder="0.00" step="0.01" style="width:100%; padding:10px 12px 10px 25px; border-radius:10px; border:1px solid #cbd5e1; outline:none; font-weight:700; font-size:14px;">
+                            </div>
+                            <button onclick="setBalance()" style="flex:1; background:#10b981; color:white; border:none; padding:10px; border-radius:10px; font-weight:600; font-size:12px; cursor:pointer; transition:all 0.2s;">Update Balance</button>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-head">
+                <div class="card-title">🚀 Real-time Activity Feed</div>
+                <button class="btn" style="padding:5px 12px; font-size:11px" onclick="loadProfile()">Refresh Log</button>
+            </div>
+            <div class="card-body" style="padding:24px">
+                <div class="log-terminal" id="log-v">
+                    <div style="color:#475569">Waiting for system logs...</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-head"><div class="card-title">📡 Device Status (Heartbeats)</div></div>
+            <div style="overflow-x:auto">
+                <table>
+                    <thead>
+                        <tr><th>Device Identifier</th><th>Engine Status</th><th>Last Bot Message</th><th>Last Heartbeat</th></tr>
+                    </thead>
+                    <tbody id="device-tbody">
+                        <tr><td colspan="4" style="text-align:center; padding:40px; color:var(--muted)">No active emulators connected</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</main>
+
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<script>
+    const targetUid = '{{ target_uid }}';
+
+    async function loadProfile() {
+        try {
+            const res = await fetch(`/web/api/admin/users/${targetUid}/profile`);
+            const data = await res.json();
+            if (!data.success) return;
+            const p = data.profile;
+
+            document.getElementById('p-username').textContent = p.scoped_user.username;
+            document.getElementById('p-fullname').textContent = p.scoped_user.full_name || 'Standard User';
+            document.getElementById('p-uid').textContent = p.scoped_user.id;
+            document.getElementById('p-role').textContent = p.scoped_user.role;
+            document.getElementById('p-status').textContent = p.scoped_user.is_active ? 'ACTIVE' : 'BANNED';
+            document.getElementById('p-apikey').textContent = p.scoped_user.api_key;
+            
+            document.getElementById('s-sent').textContent = p.counters.sent || 0;
+            document.getElementById('s-failed').textContent = p.counters.failed || 0;
+            document.getElementById('s-balance').textContent = '$' + parseFloat(p.scoped_user.balance || 0).toFixed(2);
+            document.getElementById('s-devices').textContent = p.bot_status.length;
+            
+            // Update buttons
+            const resBtn = document.getElementById('btn-restrict');
+            resBtn.textContent = p.scoped_user.use_admin_numbers ? '🔒 Admin Pool' : '🔓 Self Pool';
+            resBtn.className = `btn ${p.scoped_user.use_admin_numbers ? 'btn-primary' : ''}`;
+            
+            const statBtn = document.getElementById('btn-status');
+            statBtn.textContent = p.scoped_user.is_active ? '🚫 Ban User' : '✅ Restore';
+            statBtn.style.color = p.scoped_user.is_active ? 'var(--danger)' : 'var(--success)';
+
+            // Logs
+            const logBox = document.getElementById('log-v');
+            logBox.innerHTML = '';
+            if (p.live_logs.length) {
+                p.live_logs.forEach(log => {
+                    const line = document.createElement('div');
+                    line.className = 'log-line';
+                    const ts = new Date(log.created_at).toLocaleTimeString();
+                    const lvlCls = `log-lvl-${log.level}`;
+                    line.innerHTML = `<span class="log-ts">[${ts}]</span> <span class="${lvlCls}">[${log.level}]</span> <span style="color:#e2e8f0"><b>${log.phone_number || 'SYSTEM'}</b>: ${log.message}</span>`;
+                    logBox.appendChild(line);
+                });
+            } else { logBox.innerHTML = '<div style="color:#475569">No recent log entries found for this user.</div>'; }
+
+            // Devices
+            const tbody = document.getElementById('device-tbody');
+            if (p.bot_status.length) {
+                tbody.innerHTML = p.bot_status.map(d => `
+                    <tr>
+                        <td><code style="background:#f1f5f9; padding:4px 8px; border-radius:6px; color:var(--primary)">${d.device_id}</code></td>
+                        <td><span class="status-pill pill-success">${d.bot_status}</span></td>
+                        <td style="font-size:13px">${d.last_message || 'Waiting for activity...'}</td>
+                        <td style="font-size:12px; color:var(--muted)">${new Date(d.updated_at).toLocaleString()}</td>
+                    </tr>
+                `).join('');
+            } else { tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:40px; color:var(--muted)">No active emulators connected</td></tr>'; }
+            
+        } catch (e) { console.error(e); }
+    }
+
+    async function resetKey() {
+        if(!confirm('Reset API key? Bot will disconnect!')) return;
+        const res = await fetch(`/web/api/admin/users/${targetUid}/reset-key`, {method:'POST'});
+        const data = await res.json();
+        if(data.success) loadProfile();
+    }
+
+    async function toggleRestriction() {
+        const u = (await (await fetch(`/web/api/admin/users/${targetUid}/profile`)).json()).profile.scoped_user;
+        const newVal = u.use_admin_numbers ? 0 : 1;
+        await fetch(`/web/api/users/${targetUid}/config`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({use_admin_numbers: newVal})
+        });
+        loadProfile();
+    }
+
+    async function toggleActive() {
+        const u = (await (await fetch(`/web/api/admin/users/${targetUid}/profile`)).json()).profile.scoped_user;
+        const newVal = u.is_active ? 0 : 1;
+        await fetch(`/web/api/admin/users/${targetUid}/status`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({is_active: newVal})
+        });
+        loadProfile();
+    }
+
+    async function setBalance() {
+        const bal = document.getElementById('in-balance').value;
+        if(!bal) return;
+        await fetch(`/web/api/admin/users/${targetUid}/balance`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({balance: bal})
+        });
+        loadProfile();
+    }
+
+
+    loadProfile();
+
+    // ─── Real-time SocketIO (targeted DOM updates — no flicker) ──────────
+    const adminSocket = io({ transportOptions: { polling: { extraHeaders: {} } } });
+    adminSocket.on('connect', () => console.log('Admin socket connected'));
+
+    // Helper: prepend a single log line to the feed
+    function prependAdminLog(data) {
+        const box = document.getElementById('log-v');
+        const placeholder = box.querySelector('div[style*="color:#475569"]');
+        if (placeholder) placeholder.remove();
+
+        const line = document.createElement('div');
+        line.className = 'log-line';
+        line.style.animation = 'fadeIn 0.3s ease';
+        const ts = new Date(data.created_at || Date.now()).toLocaleTimeString();
+        const lvlCls = `log-lvl-${data.level || 'INFO'}`;
+        line.innerHTML = `<span class="log-ts">[${ts}]</span> <span class="${lvlCls}">[${data.level || 'INFO'}]</span> <span style="color:#e2e8f0"><b>${data.phone_number || 'SYSTEM'}</b>: ${data.message}</span>`;
+        box.insertBefore(line, box.firstChild);
+
+        // Keep max 60 lines
+        while (box.children.length > 60) box.removeChild(box.lastChild);
+    }
+
+    // 1. New log → prepend instantly (no reload)
+    adminSocket.on('new_bot_log', (data) => {
+        if (String(data.user_id) !== String(targetUid)) return;
+        prependAdminLog(data);
+    });
+
+    // 2. Balance changed → update balance card instantly
+    adminSocket.on('balance_update', (data) => {
+        if (String(data.user_id) !== String(targetUid)) return;
+        if (data.balance !== null && data.balance !== undefined) {
+            document.getElementById('s-balance').textContent = '$' + parseFloat(data.balance).toFixed(2);
+        }
+        // Also update sent/failed after a short delay (stats_update follows)
+    });
+
+    // 3. Stats updated → update sent/failed counters instantly
+    adminSocket.on('stats_update', (data) => {
+        if (String(data.user_id) !== String(targetUid)) return;
+        // Increment the displayed counter by 1 (optimistic update)
+        if (data.status === 'SENT') {
+            const el = document.getElementById('s-sent');
+            if (el) el.textContent = parseInt(el.textContent || 0) + 1;
+        } else if (data.status === 'FAILED') {
+            const el = document.getElementById('s-failed');
+            if (el) el.textContent = parseInt(el.textContent || 0) + 1;
+        } else {
+            // Generic stats update — reload full profile
+            loadProfile();
+        }
+    });
+
+    // 4. Bot status heartbeat → reload only device table
+    adminSocket.on('bot_status_update', (data) => {
+        if (String(data.user_id) !== String(targetUid)) return;
+        // Update device table row directly
+        const tbody = document.getElementById('device-tbody');
+        if (!tbody) return;
+        const existing = tbody.querySelector(`[data-device="${data.device_id}"]`);
+        const ts = new Date(data.updated_at || Date.now()).toLocaleString();
+        const rowHtml = `<td><code style="background:#f1f5f9; padding:4px 8px; border-radius:6px; color:var(--primary)">${data.device_id}</code></td>
+            <td><span class="status-pill pill-success">${data.bot_status}</span></td>
+            <td style="font-size:13px">${data.last_message || 'Waiting...'}</td>
+            <td style="font-size:12px; color:var(--muted)">${ts}</td>`;
+        if (existing) {
+            existing.innerHTML = rowHtml;
+        } else {
+            const tr = document.createElement('tr');
+            tr.setAttribute('data-device', data.device_id);
+            tr.innerHTML = rowHtml;
+            if (tbody.querySelector('td[colspan]')) tbody.innerHTML = '';
+            tbody.appendChild(tr);
+        }
+    });
+
+    // Fallback full reload every 30s
+    setInterval(loadProfile, 30000);
+
+
+</script>
+</body>
+</html>
