@@ -144,10 +144,10 @@
         if (!text) return;
         const nums = text.split('\n').map(n => n.trim()).filter(n => n.length > 0);
         
-        await fetch('/web/api/numbers', {
+        await fetch('/web/api/add-numbers', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ numbers: nums })
+            body: JSON.stringify({ numbers: nums.join('\n') })
         });
         document.getElementById('num-input').value = '';
         loadNumbers();
@@ -155,7 +155,7 @@
 
     async function clearNumbers() {
         if (!confirm('Are you sure you want to clear your entire number pool?')) return;
-        await fetch('/web/api/numbers', { method: 'DELETE' });
+        await fetch('/web/api/clear-numbers', { method: 'POST' });
         loadNumbers();
     }
 
